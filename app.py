@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import random
+import os
 
 app = Flask(__name__)
 
@@ -205,5 +206,7 @@ CLEARANCE: **********
     if cmd == 'CLS': return jsonify({"output": "SYSTEM_SIGNAL_CLEAR"})
     return jsonify({"output": "COMMAND NOT RECOGNIZED. TYPE 'CC'."})
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+import os
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
