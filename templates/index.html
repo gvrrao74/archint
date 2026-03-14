@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ARCHINT // OSINT TERMINAL</title>
+    <style>
+        :root { --green: #00FF41; --bg: #050505; }
+        * { box-sizing: border-box; }
+        body { 
+            background: var(--bg); color: var(--green); 
+            font-family: 'Consolas', monospace; padding: 20px; 
+            overflow: hidden; height: 100vh; display: flex; 
+            flex-direction: column; 
+        }
+
+        /* Restored Fullscreen Button Styling */
+        #fs-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: transparent; border: 1px solid var(--green);
+            color: var(--green); padding: 5px 10px; cursor: pointer;
+            font-family: inherit; font-size: 10px; z-index: 100;
+            outline: none;
+        }
+        #fs-btn:hover { background: var(--green); color: #000; }
+
+        /* Restored Gradient Banner */
+        .banner {
+            background: linear-gradient(to bottom, #ff0000, #ff8c00, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            flex-shrink: 0;
+            display: block;
+        }
+        
+        /* Optimized Scrollbar */
+        #output::-webkit-scrollbar { width: 6px; height: 0px; }
+        #output::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        
+        #output { 
+            flex-grow: 1; overflow-y: auto; overflow-x: hidden; 
+            white-space: pre-wrap; word-wrap: break-word; 
+            margin: 15px 0; border-left: 2px solid #222; padding-left: 10px; font-size: 14px; 
+        }
+
+        .input-area { display: flex; background: #0a0a0a; padding: 10px; border-top: 1px solid #222; }
+        .prompt { color: #ff0000; font-weight: bold; margin-right: 10px; }
+        input { background: transparent; border: none; color: var(--green); font-family: inherit; outline: none; width: 100%; }
+    </style>
+</head>
+<body onclick="document.getElementById('cmd-input').focus()">
+    <button id="fs-btn" onclick="toggleFS()">[ FULLSCREEN ]</button>
+<pre class="banner">
+ █████╗ ██████╗  ██████╗██╗  ██╗██╗███╗   ██╗████████╗
+██╔══██╗██╔══██╗██╔════╝██║  ██║██║████╗  ██║╚══██╔══╝
+███████║██████╔╝██║     ███████║██║██╔██╗ ██║   ██║   
+██╔══██║██╔══██╗██║     ██╔══██║██║██║╚██╗██║   ██║   
+██║  ██║██║  ██║╚██████╗██║  ██║██║██║ ╚████║   ██║   
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝   ╚═╝   
+</pre>
+    <div id="output">SYSTEM READY. TYPE 'CC' FOR COMMANDS.</div>
+    <div class="input-area">
+        <span class="prompt">root@archint:~$</span>
+        <input type="text" id="cmd-input" autofocus autocomplete="off">
+    </div>
+
+<script>
+    const input = document.getElementById('cmd-input');
+    const output = document.getElementById('output');
+
+    async function typeWithBinary(text) {
+        const lines = text.split('\n');
+        for (let line of lines) {
+            const lineDiv = document.createElement('div');
+            output.appendChild(lineDiv);
+            
+            for (let char of line) {
+                const span = document.createElement('span');
+                lineDiv.appendChild(span);
+
+                for (let i = 0; i < 2; i++) {
+                    span.innerText = Math.round(Math.random());
+                    await new Promise(r => setTimeout(r, 5));
+                }
+                
+                span.innerText = char;
+            }
+            output.scrollTop = output.scrollHeight;
+            await new Promise(r => setTimeout(r, 5));
+        }
+    }
+
+    function toggleFS() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            document.getElementById('fs-btn').innerText = "[ EXIT ]";
+        } else {
+            document.exitFullscreen();
+            document.getElementById('fs-btn').innerText = "[ FULLSCREEN ]";
+        }
+    }
+
+    input.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            const val = input.value;
+            output.innerHTML += `\n<span style="color:#666">» ${val}</span>\n`;
+            input.value = '';
+            
+            try {
+                const response = await fetch('/command', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: val})
+                });
+                const data = await response.json();
+                
+                if (data.output === "SYSTEM_SIGNAL_CLEAR") {
+                    output.innerHTML = "TERMINAL CLEARED.\n";
+                } else {
+                    await typeWithBinary(data.output);
+                }
+            } catch (err) {
+                output.innerHTML += `\nERROR: UPLINK LOST.\n`;
+            }
+        }
+    });
+</script>
+</body>
+</html>
